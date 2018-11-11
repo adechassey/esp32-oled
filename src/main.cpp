@@ -4,10 +4,8 @@
    Author: Antoine de Chassey
    Date: 09/11/2018
  */
-
-// SPIFFS
-#include "SPIFFS.h"
-#include "FS.h"
+#include "configuration.hpp"
+#include "deviceData.hpp"
 // JSON
 #include "ArduinoJson.h"
 // OLED
@@ -17,39 +15,23 @@
 // WiFi
 #include "WiFi.h"
 // HTTP client
-#include <HTTPClient.h>
-
-//========== Variables ==========//
-char clientID[20] = "";
-// Configuration file from SPIFFS (stored in /data/config.json)
-struct ConfigData
-{
-	String apiUrl;
-	String wifi_ssid;
-	String wifi_password;
-} configData;
-
-struct DeviceData
-{
-	const char *key;
-	const char *value;
-	const char *type;
-	const char *unit;
-} deviceData;
+#include "HTTPClient.h"
 
 //========== Functions ==========//
 // HTTP
 void getHttpData();
-// OLED
+// Display
 void newTextFlow(String text, OLEDDISPLAY_TEXT_ALIGNMENT textAlignment);
 void appendTextFlow(String text);
 void displayDataUp(DeviceData deviceData);
 void displayDataMiddle(DeviceData deviceData);
 void displayDataDown(DeviceData deviceData);
-// SPIFFS
-bool loadConfig();
 
 //========== Objects ==========//
+// App configuration
+Configuration app;
+// Device data
+DeviceData deviceData;
 // Initialize the OLED display using Wire library
 SH1106 display(0x3c, 5, 4);
 // HTTP client
@@ -70,30 +52,14 @@ void setup()
 	//display.flipScreenVertically();
 
 	// Read config.json stored in SPIFFS memory
-	if (!SPIFFS.begin())
-	{
-		Serial.println("Failed to mount file system");
-		return;
-	}
-	if (!loadConfig())
-	{
-		Serial.println("Failed to load config");
-		return;
-	}
-	else
-	{
-		Serial.println("Config loaded");
-	}
-	Serial.println("-------------------------\n");
+	app.load();
 
 	// sprintf(clientID, "%lu", (long uint) ESP.getEfuseMac());
-	Serial.print(F("ESP ID: "));
-	Serial.println((const char *)clientID);
 
 	Serial.print(F("Trying to connect to access point..."));
 
 	WiFi.mode(WIFI_STA);
-	WiFi.begin(configData.wifi_ssid.c_str(), configData.wifi_password.c_str());
+	WiFi.begin(app.configData.wifi_ssid.c_str(), app.configData.wifi_password.c_str());
 	// Trying to connect to default AP
 	int counter = 0;
 	while ((WiFi.status() != WL_CONNECTED))
@@ -146,59 +112,11 @@ void loop()
 }
 
 /* ================================================================
-                          OLED functions
-================================================================ */
-
-void newTextFlow(String text, OLEDDISPLAY_TEXT_ALIGNMENT alignment)
-{
-	// Clear the display
-	display.clear();
-	display.setTextAlignment(alignment);
-	display.drawStringMaxWidth(64, 5, 128, text); //display.drawString(64, 5, text);
-	// Write the buffer to the display
-	display.display();
-}
-
-void appendTextFlow(String text)
-{
-	display.drawString(64, 5, text);
-	// Write the buffer to the display
-	display.display();
-}
-
-void displayDataUp(DeviceData deviceData)
-{
-	display.setTextAlignment(TEXT_ALIGN_LEFT);
-	display.drawString(2, 10, strcat((char *)deviceData.key, " :"));
-	display.setTextAlignment(TEXT_ALIGN_RIGHT);
-	display.drawString(128, 10, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
-	display.display();
-}
-
-void displayDataMiddle(DeviceData deviceData)
-{
-	display.setTextAlignment(TEXT_ALIGN_LEFT);
-	display.drawString(2, 30, strcat((char *)deviceData.key, " :"));
-	display.setTextAlignment(TEXT_ALIGN_RIGHT);
-	display.drawString(128, 30, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
-	display.display();
-}
-
-void displayDataDown(DeviceData deviceData)
-{
-	display.setTextAlignment(TEXT_ALIGN_LEFT);
-	display.drawString(2, 50, strcat((char *)deviceData.key, " :"));
-	display.setTextAlignment(TEXT_ALIGN_RIGHT);
-	display.drawString(128, 50, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
-	display.display();
-}
-
-/* ================================================================
                           HTTP functions
 ================================================================ */
 void getHttpData()
 {
-	http.begin(configData.apiUrl);
+	http.begin(app.configData.apiUrl);
 	int httpCode = http.GET();
 	if (httpCode == 200)
 	{
@@ -249,50 +167,51 @@ void getHttpData()
 }
 
 /* ================================================================
-                  Load configuration from SPIFFS
+                          OLED functions
 ================================================================ */
-bool loadConfig()
+
+void newTextFlow(String text, OLEDDISPLAY_TEXT_ALIGNMENT alignment)
 {
-	File configFile = SPIFFS.open("/config.json", "r");
-	if (!configFile)
-	{
-		Serial.println("Failed to open config file");
-		return false;
-	}
+    // Clear the display
+    display.clear();
+    display.setTextAlignment(alignment);
+    display.drawStringMaxWidth(64, 5, 128, text); //display.drawString(64, 5, text);
+    // Write the buffer to the display
+    display.display();
+}
 
-	size_t size = configFile.size();
-	if (size > 4096)
-	{
-		Serial.println("Config file size is too large");
-		return false;
-	}
+void appendTextFlow(String text)
+{
+    display.drawString(64, 5, text);
+    // Write the buffer to the display
+    display.display();
+}
 
-	// Allocate a buffer to store contents of the file.
-	std::unique_ptr<char[]> buf(new char[size]);
+void displayDataUp(DeviceData deviceData)
+{
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.drawString(2, 10, strcat((char *)deviceData.key, " :"));
+    display.setTextAlignment(TEXT_ALIGN_RIGHT);
+    display.drawString(128, 10, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
+    display.display();
+}
 
-	// We don't use * here because ArduinoJson library requires the input
-	// buffer to be mutable. If you don't use ArduinoJson, you may as well
-	// use configFile.readBytes instead.
-	configFile.readBytes(buf.get(), size);
+void displayDataMiddle(DeviceData deviceData)
+{
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.drawString(2, 30, strcat((char *)deviceData.key, " :"));
+    display.setTextAlignment(TEXT_ALIGN_RIGHT);
+    display.drawString(128, 30, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
+    display.display();
+}
 
-	// See this helper assistant to calculate the bufferSize - https://bblanchon.github.io/ArduinoJson/assistant/
-	const size_t bufferSize = JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(2) + 3 * JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(4) + JSON_OBJECT_SIZE(7) + JSON_OBJECT_SIZE(9) + 480;
-	StaticJsonBuffer<bufferSize> jsonBuffer;
-	JsonObject &root = jsonBuffer.parseObject(buf.get());
-
-	if (!root.success())
-	{
-		Serial.println("Failed to parse config file");
-		return false;
-	}
-
-	configData.apiUrl = root["apiUrl"].as<String>();
-	// WiFi
-	JsonObject &wifi = root["wifi"];
-	configData.wifi_ssid = wifi["ssid"].as<String>();
-	configData.wifi_password = wifi["password"].as<String>();
-
-	return true;
+void displayDataDown(DeviceData deviceData)
+{
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.drawString(2, 50, strcat((char *)deviceData.key, " :"));
+    display.setTextAlignment(TEXT_ALIGN_RIGHT);
+    display.drawString(128, 50, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
+    display.display();
 }
 
 // void drawFontFaceDemo() {

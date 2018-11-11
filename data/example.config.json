@@ -1,0 +1,7 @@
+{
+	"apiUrl": "<YOUR_API_URL>",
+	"wifi": {
+		"ssid": "<YOUR_SSID>",
+		"password": "<YOUR_PASSWORD>"
+	}
+}
