@@ -105,10 +105,10 @@ void loop()
    }
    counter++;
    delay(10);
-  */
+  	*/
 	getHttpData();
 	WiFi.disconnect();
-	ESP.deepSleep(120000000); // 10 minutes
+	ESP.deepSleep(600000000); // 10 minutes
 }
 
 /* ================================================================
@@ -172,46 +172,46 @@ void getHttpData()
 
 void newTextFlow(String text, OLEDDISPLAY_TEXT_ALIGNMENT alignment)
 {
-    // Clear the display
-    display.clear();
-    display.setTextAlignment(alignment);
-    display.drawStringMaxWidth(64, 5, 128, text); //display.drawString(64, 5, text);
-    // Write the buffer to the display
-    display.display();
+	// Clear the display
+	display.clear();
+	display.setTextAlignment(alignment);
+	display.drawStringMaxWidth(64, 5, 128, text); //display.drawString(64, 5, text);
+	// Write the buffer to the display
+	display.display();
 }
 
 void appendTextFlow(String text)
 {
-    display.drawString(64, 5, text);
-    // Write the buffer to the display
-    display.display();
+	display.drawString(64, 5, text);
+	// Write the buffer to the display
+	display.display();
 }
 
 void displayDataUp(DeviceData deviceData)
 {
-    display.setTextAlignment(TEXT_ALIGN_LEFT);
-    display.drawString(2, 10, strcat((char *)deviceData.key, " :"));
-    display.setTextAlignment(TEXT_ALIGN_RIGHT);
-    display.drawString(128, 10, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
-    display.display();
+	display.setTextAlignment(TEXT_ALIGN_LEFT);
+	display.drawString(2, 10, strcat((char *)deviceData.key, " :"));
+	display.setTextAlignment(TEXT_ALIGN_RIGHT);
+	display.drawString(128, 10, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
+	display.display();
 }
 
 void displayDataMiddle(DeviceData deviceData)
 {
-    display.setTextAlignment(TEXT_ALIGN_LEFT);
-    display.drawString(2, 30, strcat((char *)deviceData.key, " :"));
-    display.setTextAlignment(TEXT_ALIGN_RIGHT);
-    display.drawString(128, 30, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
-    display.display();
+	display.setTextAlignment(TEXT_ALIGN_LEFT);
+	display.drawString(2, 30, strcat((char *)deviceData.key, " :"));
+	display.setTextAlignment(TEXT_ALIGN_RIGHT);
+	display.drawString(128, 30, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
+	display.display();
 }
 
 void displayDataDown(DeviceData deviceData)
 {
-    display.setTextAlignment(TEXT_ALIGN_LEFT);
-    display.drawString(2, 50, strcat((char *)deviceData.key, " :"));
-    display.setTextAlignment(TEXT_ALIGN_RIGHT);
-    display.drawString(128, 50, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
-    display.display();
+	display.setTextAlignment(TEXT_ALIGN_LEFT);
+	display.drawString(2, 50, strcat((char *)deviceData.key, " :"));
+	display.setTextAlignment(TEXT_ALIGN_RIGHT);
+	display.drawString(128, 50, strcat(strcat((char *)deviceData.value, " "), deviceData.unit));
+	display.display();
 }
 
 // void drawFontFaceDemo() {
